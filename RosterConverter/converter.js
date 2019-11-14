@@ -1,14 +1,14 @@
 
 
-// var teamsData = require('./JSON/Teams.json');
-// var playerData = require('./JSON/Players.json');
-var freeAgents = require('./NBAJSON/FreeAgents.json');
+var teamsData = require('./JSON/Teams.json');
+var playerData = require('./JSON/Players.json');
+// var freeAgents = require('./NBAJSON/FreeAgents.json');
 
 
-var teamsData = require('./NBAJSON/Teams.json');
-var playerData = require('./NBAJSON/Players.json');
-var creations = require('./NBAJSON/Creations.json');
-// var freeAgents = require('./JSON/FreeAgents.json');
+// var teamsData = require('./NBAJSON/Teams.json');
+// var playerData = require('./NBAJSON/Players.json');
+// var creations = require('./NBAJSON/Creations.json');
+var freeAgents = require('./JSON/FreeAgents.json');
 
 
 var draftData = require('./NBAJSON/DraftData.json');
@@ -233,6 +233,7 @@ class Player {
 class Team {
 
     constructor(team) {
+        this.rank = team.rank;
         this.conferenceId = team.conferenceId;
         this.id = team.id;
         this.name = team.name;
@@ -935,13 +936,13 @@ conferences.push(easternConference, westernConference);
     for (let i = 0; i < teamsData.length; i++) {
         teams.push(new Team(teamsData[i]));
         for (let j = 0; j < playerData.length; j++) {
-            if (playerData[j].team === teams[i].id) {
-                ply = new Player(playerData[j]);
-                ply.calculateRating();
-                teams[i].roster.push(ply);
-                ply.teamLogoSrc = teams[i].logoSrc;
-                ply.teamName = teams[i].name;
-            }
+            // if (playerData[j].team === teams[i].id) {
+            //     ply = new Player(playerData[j]);
+            //     ply.calculateRating();
+            //     teams[i].roster.push(ply);
+            //     ply.teamLogoSrc = teams[i].logoSrc;
+            //     ply.teamName = teams[i].name;
+            // }
         }
         if (teams[i].roster.length <= 0) {
             generateCustomRoster(teams[i], teamsData[i].rating);
@@ -4484,7 +4485,122 @@ function makeRosterFilePC(){
 }
 
 
-createCreations();
+// createCreations();
+
+
+function collegeHoopsSystem(){
+    console.log(teams.length);
+    for(let i=0; i<teams.length; i++){
+        teams[i].roster = [];
+        for(let j = 0; j< playerData.length; j++){
+            if(playerData[j].team === teams[i].id){
+
+                let position= 0;
+                if(playerData[j].position == "G"){
+                    position = Math.round(Math.random()*1)
+                }
+                if(playerData[j].position == "F"){
+                    position = Math.round(Math.random()*1)+2
+
+                }
+                if(playerData[j].position == "C"){
+                    position = 4;
+
+                }
+                
+                let rating = 60;
+                if(!isNaN(playerData[j].rating)){
+                    rating = playerData[j].rating;
+                }
+                if(rating>99){
+                    rating = 99;
+                }
+                if(rating<40){
+                    rating = 40;
+                }
+                let ply = generatePlayer(position, rating);
+                teams[i].roster.push(ply);
+                ply.name = playerData[j].name;
+                ply.faceSrc = playerData[j].faceSrc;
+                ply.height = playerData[j].height;
+                ply.number = playerData[j].number;
+                ply.age = playerData[j].age;
+                ply.years = playerData[j].years;
+                ply.salary = playerData[j].salary;
+
+
+                if(!isNaN(playerData[j].off)){
+                    ply.off = playerData[j].off;
+                }
+                if(!isNaN(playerData[j].def)){
+                    ply.def = playerData[j].def;
+                }
+                if(!isNaN(playerData[j].reb)){
+                    ply.reb = playerData[j].reb;
+                }
+                if(!isNaN(playerData[j].threePoint)){
+                    ply.threePoint = playerData[j].threePoint;
+                }
+                if(!isNaN(playerData[j].freeThrow)){
+                    ply.freeThrow = playerData[j].freeThrow;
+                }
+
+                ply.calculateRating();
+
+
+
+            }
+        }
+        teams[i].reorderLineup();
+
+        let teamRating = Math.round(scaleBetween(teams[i].rank,73,80,100,0));
+
+        if (teams[i].rating > teamRating) {
+            while (teams[i].rating != teamRating) {
+                for (let j = 0; j < teams[i].roster.length; j++) {
+                    if(teams[i].roster[j].rating>60){
+
+                    teams[i].roster[j].off--;
+                    teams[i].roster[j].def--;
+                    teams[i].roster[j].threePoint--;
+                    teams[i].roster[j].reb--;
+                    teams[i].roster[j].calculateRating();
+                    teams[i].calculateRating();
+                    if (teams[i].rating <= teamRating) {
+                        break;
+                    }
+                }
+                }
+            }
+        }
+    
+        if (teams[i].rating < teamRating) {
+            while (teams[i].rating != teamRating) {
+                for (let j = 0; j < teams[i].roster.length; j++) {
+                    if(teams[i].roster[j].rating<99){
+                        teams[i].roster[j].off++;
+                        teams[i].roster[j].def++;
+                        teams[i].roster[j].threePoint++;
+                        teams[i].roster[j].reb++;
+                        teams[i].roster[j].calculateRating();
+                        teams[i].calculateRating();
+                        if (teams[i].rating >= teamRating) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+
+    }
+
+
+
+
+}
+
+collegeHoopsSystem();
 
 makeRosterFilePC();
 
